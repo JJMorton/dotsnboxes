@@ -142,7 +142,7 @@ function setup() {
 	snow = [];
 
 	// Socket events
-	socket = io.connect('http://165.120.23.108:8001/');
+	socket = io.connect('https://dotsnboxes.herokuapp.com/');
 
 	socket.on('info', (info) => {
 		console.log("info");
