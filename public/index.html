@@ -1,0 +1,42 @@
+<!--
+TODO:
+	- Create a chat and show info there instead
+	- Add host buttons to bottom of sidebar
+-->
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Dots and Boxes</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+		<script language="javascript" type="text/javascript" src="libraries/p5.js"></script>
+		<script language="javascript" type="text/javascript" src="libraries/p5.dom.js"></script>
+		<script language="javascript" type="text/javascript" src="libraries/p5.sound.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/snow.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/dot.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/sketch.js"></script>
+		<link rel="stylesheet" href="styles/style.css">
+	</head>
+
+	<body>
+		<div id="sidebar">
+			<div class="section" id="section-player-name">
+				<p id="player-name"></p>
+			</div>
+			<div class="section" id="section-btns">
+				<button id="btn-join" onclick="$('#input-nickname').slideDown(100).focus()">Join Game</button>
+				<button id="btn-ready" onclick="toggleReady()">Toggle Ready</button>
+				<input id="input-nickname" placeholder="Enter nickname and press enter" onkeypress="joinGame(event)">
+			</div>
+			<div class="section" id="section-players">
+				<p id="player-count"></p>
+				<ol id="player-list"></ol>
+			</div>
+			<div class="section" id="section-chat">
+				<div id="chat-container"></div>
+				<input id="input-chat" placeholder="Join the game to chat" onkeypress="sendMessage(event)">
+			</div>
+		</div>
+		<div id="game"></div>
+	</body>
+</html>
