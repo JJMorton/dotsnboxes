@@ -5,6 +5,8 @@ window.mobileCheck = function() {
 };
 
 let socket;
+//let host = 'http://165.120.23.108:8001/';
+let host = 'https://dotsnboxes.herokuapp.com/';
 
 let mobile;
 
@@ -14,11 +16,18 @@ let gridSize, boxSize, dotSize, hoverRadius;
 let dragOrigin, transPos, dragging;
 let activeDot, completedBoxes;
 let grid;
-let name, play, active, infoMsg;
+let name, play, active;
 let sndPress, sndRelease, sndBox;
 let font;
 let connections;
 let snow;
+
+$(document).ready(function() {
+	$("#input-nickname").on("blur", function() {
+		$("#input-nickname").slideUp(100);
+		document.getElementById("input-nickname").value = "";
+	});
+});
 
 function joinGame(e) {
 	if (e.keyCode == 13) {
@@ -73,11 +82,6 @@ function transMouse() {
 
 function createGrid() {
 	gridSize = 5 + Math.floor(connections.length/2);
-	if (mobile) {
-		boxSize = round(min(width, height) / (gridSize + 1));
-	} else {
-		boxSize = round(min(width/3, height/3) / (gridSize + 1));
-	}
 	dotSize = boxSize/10;
 	hoverRadius = boxSize/3;
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
@@ -92,11 +96,6 @@ function createGrid() {
 }
 
 function resizeGrid() {
-	if (mobile) {
-		boxSize = round(min(width, height) / (gridSize + 1));
-	} else {
-		boxSize = round(min(width/3, height/3) / (gridSize + 1));
-	}
 	dotSize = boxSize/10;
 	hoverRadius = boxSize/3;
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
@@ -110,6 +109,14 @@ function resizeGrid() {
 			grid[x][y].jointSize = boxSize;
 		}
 	}
+}
+
+function zoom(absAmount) {
+	let amount = absAmount * boxSize;
+	if (boxSize + amount > 0.02*min(width, height) && (boxSize + amount) * gridSize < 0.9*min(width, height)) {
+		boxSize += amount;
+	}
+	resizeGrid();
 }
 
 function preload() {
@@ -137,20 +144,19 @@ function setup() {
 	name = "";
 	play = false;
 	active = false;
-	infoMsg = "";
 	connections = [];
 	snow = [];
 
-	// Socket events
-	socket = io.connect('https://dotsnboxes.herokuapp.com/');
+	if (mobile) {
+		boxSize = round(min(width, height) / (gridSize + 1));
+	} else {
+		boxSize = round(min(width/3, height/3) / (gridSize + 1));
+	}
 
-	socket.on('info', (info) => {
-		console.log("info");
-		infoMsg = info.message;
-	});
+	// Socket events
+	socket = io.connect(host);
 
 	socket.on("gameUpdate", (data) => {
-		console.log(data);
 		// Update play state
 		play = data.play
 
@@ -194,19 +200,17 @@ function setup() {
 					playerTextElt.innerHTML += " (left)";
 				}
 
+				if (connections[i].active || (!play && connections[i].ready)) {
+					playerElt.className = "active-player";
+					playerTextElt.className += " active-player";
+				}
+
 				let scoreElt = document.createElement("div");
 				scoreElt.style.width = str(100 * connections[i].score / sq(gridSize-1)) + "%";
 				scoreElt.className = "score-bar";
 
 				playerElt.appendChild(scoreElt);
 				playerElt.appendChild(playerTextElt);
-				if (!play) {
-					let readyElt = document.createElement("input");
-					readyElt.setAttribute("type", "checkbox");
-					readyElt.checked = connections[i].ready;
-					readyElt.disabled = true;
-					playerElt.appendChild(readyElt);
-				}
 
 				playerListElt.appendChild(playerElt);
 			}
@@ -229,6 +233,7 @@ function setup() {
 
 	socket.on("endGame", () => {
 		console.log("endGame");
+		socket.disconnect();
 		setup();
 	});
 
@@ -243,42 +248,30 @@ function setup() {
 }
 
 function draw() {
-	if (infoMsg == "") {
-		if (completedBoxes == sq(gridSize-1) && play) {
-			socket.emit("endGame");
-		}
-
-		background(40);
-
-		// Drawing the actual game
-		translate(transPos.x, transPos.y);
-
-		let mousePos = transMouse();
-
-		// Draw the dots
-		forEachDot((dot) => {
-			dot.draw();
-			if (dot == activeDot) {
-				stroke(255);
-				strokeWeight(2);
-				line(dot.x, dot.y, mousePos.x, mousePos.y);
-			} else {
-				if (dist(mousePos.x, mousePos.y, dot.x, dot.y) < hoverRadius && active) {
-					dot.hover();
-				}
-			}
-		});
-
-		// All the info in the top corners
-		translate(-transPos.x, -transPos.y);
-
-	} else {
-		background(40);
-		noStroke();
-		fill(255);
-		textAlign(CENTER, CENTER);
-		text(infoMsg, width/2, height/2);
+	if (completedBoxes == sq(gridSize-1) && play) {
+		socket.emit("endGame");
 	}
+
+	background(40);
+
+	// Drawing the actual game
+	translate(transPos.x, transPos.y);
+
+	let mousePos = transMouse();
+
+	// Draw the dots
+	forEachDot((dot) => {
+		dot.draw();
+		if (dot == activeDot) {
+			stroke(255);
+			strokeWeight(dotSize * 0.7);
+			line(dot.x, dot.y, mousePos.x, mousePos.y);
+		} else {
+			if (dist(mousePos.x, mousePos.y, dot.x, dot.y) < hoverRadius && active) {
+				dot.hover();
+			}
+		}
+	});
 
 	for (particle of snow) {
 		particle.move();
@@ -363,10 +356,8 @@ function mouseReleased() {
 	}
 }
 
-function keyPressed() {
-	if (infoMsg != "" && keyCode == ENTER) {
-		setup();
-	}
+function mouseWheel(e) {
+	zoom(-e.delta/1000);
 }
 
 function windowResized() {

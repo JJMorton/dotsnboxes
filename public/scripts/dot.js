@@ -41,7 +41,7 @@ class Dot {
 		ellipse(this.x, this.y, this.size);
 
 		stroke(255);
-		strokeWeight(2);
+		strokeWeight(this.size * 0.7);
 		for (let i = 0; i < this.joints.length; i++) {
 			if (this.joints[i]) {
 				switch(i) {
@@ -61,14 +61,15 @@ class Dot {
 		}
 
 		if (this.active) {
-			stroke(255);
-			noFill();
+			noStroke();
+			fill(255, 70);
 			ellipse(this.x, this.y, this.hoverSize);
 		}
 	}
 
 	hover() {
-		stroke(255, 70);
+		stroke(255);
+		strokeWeight(2);
 		noFill();
 		ellipse(this.x, this.y, this.hoverSize);
 	}

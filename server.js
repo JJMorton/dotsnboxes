@@ -277,6 +277,7 @@ io.sockets.on('connection', (socket) => {
 		console.log("[" + getFormattedTime() + "] " + socket.id + " disconnected");
 		let i = 0;
 		let found = false;
+		let activePlayerDisconnect = -1;
 		while (i < players.length && found == false) {
 			if (players[i].id == socket.id) {
 				io.sockets.emit('message', {
@@ -287,8 +288,7 @@ io.sockets.on('connection', (socket) => {
 				if (play) {
 					// If the game had started, set them as not present and skip their turn
 					if (players[i].active) {
-						players[i].active = false;
-						nextPlayer();
+						activePlayerDisconnect = i;
 					}
 					players[i].present = false;
 				} else {
@@ -300,13 +300,17 @@ io.sockets.on('connection', (socket) => {
 
 			i++;
 		}
-
+		
 		// Decides if all the players are inactive or not
 		let inactive = true;
 		for (player of players) {
 			if (player.present) {
 				inactive = false;
 			}
+		}
+
+		if (!inactive && activePlayerDisconnect >= 0) {
+			nextPlayer();
 		}
 
 		if (players.length == 0 || inactive) {

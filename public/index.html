@@ -1,6 +1,5 @@
 <!--
 TODO:
-	- Create a chat and show info there instead
 	- Add host buttons to bottom of sidebar
 -->
 <html>
@@ -33,10 +32,14 @@ TODO:
 				<ol id="player-list"></ol>
 			</div>
 			<div class="section" id="section-chat">
-				<div id="chat-container"></div>
+				<div id="chat-container" class="custom-scrollbar"></div>
 				<input id="input-chat" placeholder="Join the game to chat" onkeypress="sendMessage(event)">
 			</div>
 		</div>
 		<div id="game"></div>
+		<!--<div id="zoom-controls">
+			<button id="zoom-out" onclick="zoom(-10)">-</button>
+			<button id="zoom-in" onclick="zoom(10)">+</button>
+		</div>-->
 	</body>
 </html>
