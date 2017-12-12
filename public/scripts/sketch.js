@@ -115,6 +115,7 @@ function zoom(absAmount) {
 	let amount = absAmount * boxSize;
 	if (boxSize + amount > 0.02*min(width, height) && (boxSize + amount) * gridSize < 0.9*min(width, height)) {
 		boxSize += amount;
+		hoverRadius = boxSize/3;
 	}
 	resizeGrid();
 }
