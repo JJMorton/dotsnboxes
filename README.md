@@ -1,2 +1,2 @@
 # dotsnboxes
-Dots and boxes using node and socket.io
+Dots and boxes using node, socket.io and p5.js
