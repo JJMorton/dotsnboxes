@@ -358,7 +358,9 @@ function mouseReleased() {
 }
 
 function mouseWheel(e) {
-	zoom(-e.delta/1000);
+	if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+		zoom(-e.delta/1000);
+	}
 }
 
 function windowResized() {
