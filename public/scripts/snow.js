@@ -15,7 +15,7 @@ let Snow = function() {
 	}
 	this.show = function() {
 		strokeWeight(this.z/2);
-		stroke(255, 30);
+		stroke(c_fore, 30);
 		line(this.x, this.y - this.z, this.x, this.y);
 	}
 }

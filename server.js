@@ -10,6 +10,7 @@ let io = socket(server);
 let players = [];
 let play = false;
 let grid = [];
+let gridSize = 5;
 let completedBoxes = 0;
 
 class Dot {
@@ -40,6 +41,7 @@ function getFormattedTime() {
 }
 
 function reset() {
+	gridSize = 5;
 	createGrid();
 	completedBoxes = 0;
 	players = [];
@@ -47,11 +49,11 @@ function reset() {
 }
 
 function createGrid() {
-	let size = 5 + Math.floor(players.length/2);
+	//let size = 5 + Math.floor(players.length/2);
 	grid = [];
-	for (let x = 0; x < size; x++) {
+	for (let x = 0; x < gridSize; x++) {
 		grid[x] = [];
-		for (let y = 0; y < size; y++) {
+		for (let y = 0; y < gridSize; y++) {
 			grid[x][y] = new Dot();
 		}
 	}
@@ -79,14 +81,6 @@ function createdABox(playerID) {
 		}
 	}
 	return created;
-}
-
-function createEndTimer() {
-	console.log("[" + getFormattedTime() + "] Game ended");
-	setTimeout(function() {
-		reset();
-		io.sockets.emit('endGame');
-	}, 2000);
 }
 
 function nextPlayer() {
@@ -130,18 +124,17 @@ function emitGameUpdate(socketID = null) {
 		}
 	}
 
+	let data = {
+		grid: gridData,
+		gridSize: gridSize,
+		players: players,
+		play: play
+	}
+
 	if (socketID == null) {
-		io.sockets.emit('gameUpdate', {
-			grid: gridData,
-			players: players,
-			play: play
-		});
+		io.sockets.emit('gameUpdate', data);
 	} else {
-		io.to(socketID).emit('gameUpdate', {
-			grid: gridData,
-			players: players,
-			play: play
-		});
+		io.to(socketID).emit('gameUpdate', data);
 	}
 }
 
@@ -154,19 +147,21 @@ io.sockets.on('connection', (socket) => {
 	emitGameUpdate(socket.id);
 
 	socket.on('setNick', (data) => {
-		if (data.nickname == "" || data.nickname == null || data.nickname.length > 45) {
+		if (data.nickname == "" || data.nickname == null || data.nickname.length > 40) {
 			io.to(socket.id).emit('message', {
 				text: 'Invalid nickname',
 				sender: ""
 			});
 		} else {
 			if (!play) {
+				let admin = players.length == 0;
 				players[players.length] = {
 					id: socket.id,
 					nickname: data.nickname,
 					ready: false,
 					active: false,
 					present: true,
+					admin: admin,
 					score: 0
 				};
 
@@ -193,17 +188,30 @@ io.sockets.on('connection', (socket) => {
 		}
 
 		if (allReady) {
-			players[0].active = true;
-			play = true;
 			io.sockets.emit('message', {
 				text: "All players ready. Game starting",
 				sender: ""
 			});
+
+			players[0].active = true;
+			play = true;
 		}
 
 		emitGameUpdate();
 
 		console.log("[" + getFormattedTime() + "] " + socket.id + " toggled ready state");
+	});
+
+	socket.on('settingUpdate', (settings) => {
+		if (!play) {
+			for (player of players) {
+				if (player.id == socket.id && player.admin) {
+					gridSize = settings.gridSize;
+					createGrid();
+					emitGameUpdate();
+				}
+			}
+		}
 	});
 
 	socket.on('jointCreated', (data) => {
@@ -263,7 +271,11 @@ io.sockets.on('connection', (socket) => {
 				});
 			}
 
-			createEndTimer();
+			console.log("[" + getFormattedTime() + "] Game ended");
+			setTimeout(function() {
+				reset();
+				io.sockets.emit('endGame');
+			}, 2000);
 		}
 
 		emitGameUpdate();
@@ -277,7 +289,8 @@ io.sockets.on('connection', (socket) => {
 		console.log("[" + getFormattedTime() + "] " + socket.id + " disconnected");
 		let i = 0;
 		let found = false;
-		let activePlayerDisconnect = -1;
+		let activePlayerDisconnect = false;
+		let adminDisconnect = false;
 		while (i < players.length && found == false) {
 			if (players[i].id == socket.id) {
 				io.sockets.emit('message', {
@@ -285,11 +298,16 @@ io.sockets.on('connection', (socket) => {
 					sender: ""
 				});
 				found = true;
+
+				if (players[i].admin) {
+					adminDisconnect = true;
+					players[i].admin = false;
+				}
+
 				if (play) {
 					// If the game had started, set them as not present and skip their turn
-					if (players[i].active) {
-						activePlayerDisconnect = i;
-					}
+					activePlayerDisconnect = players[i].active;
+
 					players[i].present = false;
 				} else {
 					// Otherwise, just remove the player and resize the grid
@@ -309,8 +327,22 @@ io.sockets.on('connection', (socket) => {
 			}
 		}
 
+		// If an active player disconnected, give the turn to the next player
 		if (!inactive && activePlayerDisconnect >= 0) {
 			nextPlayer();
+		}
+
+		// If the admin disconnected, give admin to the first present player
+		if (adminDisconnect && players.length > 0 && !inactive) {
+			let i = 0;
+			let foundNewAdmin = false;
+			while (i < players.length && !foundNewAdmin) {
+				if (players[i].present) {
+					players[i].admin = true;
+					foundNewAdmin = true;
+				}
+				i++
+			}
 		}
 
 		if (players.length == 0 || inactive) {

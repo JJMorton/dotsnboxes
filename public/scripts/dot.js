@@ -24,7 +24,7 @@ class Dot {
 	draw() {
 		if (this.box) {
 			noStroke();
-			fill(255, 20);
+			fill(c_fore, 20);
 			rect(this.x, this.y, this.jointSize, this.jointSize);
 			textAlign(CENTER, CENTER);
 			if (mobile) {
@@ -32,15 +32,15 @@ class Dot {
 			} else {
 				textSize(this.jointSize/3);
 			}
-			fill(255);
+			fill(c_fore);
 			text(this.boxText, this.x + this.jointSize/2 - this.size/4, this.y + this.jointSize/2 - this.size/4);
 		}
 
 		noStroke();
-		fill(255);
+		fill(c_fore);
 		ellipse(this.x, this.y, this.size);
 
-		stroke(255);
+		stroke(c_fore);
 		strokeWeight(this.size * 0.7);
 		for (let i = 0; i < this.joints.length; i++) {
 			if (this.joints[i]) {
@@ -62,13 +62,13 @@ class Dot {
 
 		if (this.active) {
 			noStroke();
-			fill(255, 70);
+			fill(c_fore, 70);
 			ellipse(this.x, this.y, this.hoverSize);
 		}
 	}
 
 	hover() {
-		stroke(255);
+		stroke(c_fore);
 		strokeWeight(2);
 		noFill();
 		ellipse(this.x, this.y, this.hoverSize);

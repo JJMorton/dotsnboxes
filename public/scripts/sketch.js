@@ -10,29 +10,54 @@ let host = 'https://dotsnboxes.herokuapp.com/';
 
 let mobile;
 
-const baseGridSize = 5;
-
 let gridSize, boxSize, dotSize, hoverRadius;
 let dragOrigin, transPos, dragging;
 let activeDot, completedBoxes;
 let grid;
-let name, play, active;
+let name, play, active, admin;
 let sndPress, sndRelease, sndBox;
-let font;
 let connections;
 let snow;
+
+let c_back = 40;
+let c_fore = 235;
 
 $(document).ready(function() {
 	$("#input-nickname").on("blur", function() {
 		$("#input-nickname").slideUp(100);
 		document.getElementById("input-nickname").value = "";
 	});
+
+	$("#btn-theme").click(function() {
+		let oldLink = document.getElementsByTagName("link")[0];
+		if (oldLink.href.substring(oldLink.href.length - 8) == "dark.css") {
+			oldLink.href = "styles/light.css";
+		} else {
+			oldLink.href = "styles/dark.css";
+		}
+
+		c_temp = c_fore;
+		c_fore = c_back;
+		c_back = c_temp;
+	});
+
+	$("[type='number']").keypress(function (evt) {
+    	evt.preventDefault();
+	});
+
+	$("#grid-size").change(function() {
+		if (admin) {
+			socket.emit("settingUpdate", {
+				gridSize: parseInt(this.value)
+			});
+		}
+	});
 });
 
 function joinGame(e) {
 	if (e.keyCode == 13) {
 		name = document.getElementById("input-nickname").value;
-		if (name != "") {
+		if (name != "" && name.length <= 40) {
 			$("#input-nickname").slideUp(100);
 			if (!play) {
 				document.getElementById("input-nickname").value = "";
@@ -66,6 +91,7 @@ function updateButtonState() {
 	document.getElementById("btn-join").disabled  = name != "" || play;
 	document.getElementById("btn-ready").disabled = name == "" || play;
 	document.getElementById("input-chat").disabled = name == "";
+	document.getElementById("grid-size").disabled = !admin || play;
 }
 
 function forEachDot(action) {
@@ -81,7 +107,7 @@ function transMouse() {
 }
 
 function createGrid() {
-	gridSize = 5 + Math.floor(connections.length/2);
+	//gridSize = 5 + Math.floor(connections.length/2);
 	dotSize = boxSize/10;
 	hoverRadius = boxSize/3;
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
@@ -113,7 +139,7 @@ function resizeGrid() {
 
 function zoom(absAmount) {
 	let amount = absAmount * boxSize;
-	if (boxSize + amount > 0.02*min(width, height) && (boxSize + amount) * gridSize < 0.9*min(width, height)) {
+	if ((amount > 0 || boxSize + amount > 0.02*min(width, height)) && (amount < 0 || (boxSize + amount) * gridSize < 0.9*min(width, height))) {
 		boxSize += amount;
 		hoverRadius = boxSize/3;
 	}
@@ -121,12 +147,10 @@ function zoom(absAmount) {
 }
 
 function preload() {
-	// Load sounds and fonts
+	// Load sounds
 	sndPress = loadSound('assets/press.wav');
 	sndRelease = loadSound('assets/release.wav');
 	sndBox = loadSound('assets/box.wav');
-
-	font = loadFont("assets/OpenSans.ttf");
 }
 
 function setup() {
@@ -143,6 +167,7 @@ function setup() {
 	dragging = false;
 	grid = [];
 	name = "";
+	admin = false;
 	play = false;
 	active = false;
 	connections = [];
@@ -166,6 +191,8 @@ function setup() {
 		document.getElementById("player-count").innerHTML = "Number of players: <strong>" + connections.length + "</strong>";
 
 		// Update grid
+		gridSize = data.gridSize;
+		document.getElementById("grid-size").value = gridSize;
 		createGrid();
 		let i = 0;
 		forEachDot((dot) => {
@@ -185,13 +212,19 @@ function setup() {
 
 		if (connections.length > 0) {
 			active = false;
+			admin = false;
 
 			// Add all players to list
 			for (let i = 0; i < connections.length; i++) {
+				// Evaluates whether the player is active or an admin
 				if (connections[i].id == socket.id && connections[i].active) {
 					active = true;
 				}
+				if (connections[i].id == socket.id && connections[i].admin) {
+					admin = true;
+				}
 
+				// Player list element and text
 				let playerElt = document.createElement("li");
 
 				let playerTextElt = document.createElement("p");
@@ -201,17 +234,26 @@ function setup() {
 					playerTextElt.innerHTML += " (left)";
 				}
 
-				if (connections[i].active || (!play && connections[i].ready)) {
+				if (connections[i].active && play|| (!play && connections[i].ready)) {
 					playerElt.className = "active-player";
 					playerTextElt.className += " active-player";
 				}
 
+				// Score bar
 				let scoreElt = document.createElement("div");
 				scoreElt.style.width = str(100 * connections[i].score / sq(gridSize-1)) + "%";
 				scoreElt.className = "score-bar";
 
 				playerElt.appendChild(scoreElt);
 				playerElt.appendChild(playerTextElt);
+
+				// Current turn indicator
+				if (connections[i].active && play) {
+					let playerIndicatorElt = document.createElement("p");
+					playerIndicatorElt.id = "active-player-indicator";
+					playerIndicatorElt.innerHTML = "<";
+					playerElt.appendChild(playerIndicatorElt);
+				}
 
 				playerListElt.appendChild(playerElt);
 			}
@@ -233,7 +275,6 @@ function setup() {
 	});
 
 	socket.on("endGame", () => {
-		console.log("endGame");
 		socket.disconnect();
 		setup();
 	});
@@ -253,7 +294,7 @@ function draw() {
 		socket.emit("endGame");
 	}
 
-	background(40);
+	background(c_back);
 
 	// Drawing the actual game
 	translate(transPos.x, transPos.y);
@@ -264,7 +305,7 @@ function draw() {
 	forEachDot((dot) => {
 		dot.draw();
 		if (dot == activeDot) {
-			stroke(255);
+			stroke(c_fore);
 			strokeWeight(dotSize * 0.7);
 			line(dot.x, dot.y, mousePos.x, mousePos.y);
 		} else {
@@ -282,9 +323,6 @@ function draw() {
 
 function mousePressed() {
 	let mousePos = transMouse();
-	// if (!mobile) {
-	// 	dragging = true;
-	// }
 
 	if (active) {
 		forEachDot((dot) => {
@@ -297,17 +335,6 @@ function mousePressed() {
 			}
 		});
 	}
-
-	// if (dragging) {
-	// 	dragOrigin = createVector(mousePos.x, mousePos.y);
-	// }
-}
-
-function mouseDragged() {
-	// if (dragging) {
-	// 	let mousePos = transMouse();
-	// 	transPos.add(p5.Vector.sub(createVector(mousePos.x, mousePos.y), dragOrigin));
-	// }
 }
 
 function mouseReleased() {
@@ -329,10 +356,10 @@ function mouseReleased() {
 						playerID: socket.id
 					}
 
-					let top    = dot.y == activeDot.y - boxSize;
-					let right  = dot.x == activeDot.x + boxSize;
-					let bottom = dot.y == activeDot.y + boxSize;
-					let left   = dot.x == activeDot.x - boxSize;
+					let top    = abs(dot.y - (activeDot.y - boxSize)) < dotSize/2;
+					let right  = abs(dot.x - (activeDot.x + boxSize)) < dotSize/2;
+					let bottom = abs(dot.y - (activeDot.y + boxSize)) < dotSize/2;
+					let left   = abs(dot.x - (activeDot.x - boxSize)) < dotSize/2;
 
 					let posIndex = -1;
 					if (top && !(right || bottom || left) && !activeDot.joints[0]) {
