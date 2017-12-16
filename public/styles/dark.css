@@ -81,6 +81,10 @@ input:disabled {
 	background-color: transparent;
 }
 
+input[type=number]:disabled {
+	border: 1px solid transparent;
+}
+
 input[type=number]::-webkit-inner-spin-button {
 	opacity: 1;
 }
@@ -157,7 +161,7 @@ input[type=number]:disabled::-webkit-inner-spin-button {
 }
 
 #input-nickname {
-	width: calc(100% - 20px);
+	width: calc(100% - 32px);
 	margin: 10px 10px 0px 10px;
 	display: none;
 }

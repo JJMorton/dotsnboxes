@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css?family=Raleway|Source+Code+Pro');
 
+/*
+	COLOURS
+*/
+
 :root {
 	--bg-back: #EBEBEB;
 	--bg-mid: #E1E1E1;
@@ -8,6 +12,7 @@
 	--fg-back: #999999;
 	--fg-active: #20E020;
 }
+
 
 /*
 	GENERAL STYLES
@@ -74,6 +79,10 @@ input {
 input:disabled {
 	border: 1px solid var(--fg-back);
 	background-color: transparent;
+}
+
+input[type=number]:disabled {
+	border: 1px solid transparent;
 }
 
 input[type=number]::-webkit-inner-spin-button {
@@ -152,7 +161,7 @@ input[type=number]:disabled::-webkit-inner-spin-button {
 }
 
 #input-nickname {
-	width: calc(100% - 20px);
+	width: calc(100% - 32px);
 	margin: 10px 10px 0px 10px;
 	display: none;
 }

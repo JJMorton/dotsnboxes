@@ -52,6 +52,10 @@ $(document).ready(function() {
 			});
 		}
 	});
+
+	$("#grid-size").mouseup(function() {
+		$(this).change();
+	});
 });
 
 function joinGame(e) {
