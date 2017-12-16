@@ -41,8 +41,8 @@ $(document).ready(function() {
 		c_back = c_temp;
 	});
 
-	$("[type='number']").keypress(function (evt) {
-    	evt.preventDefault();
+	$("[type='number']").keypress(function (e) {
+    	e.preventDefault();
 	});
 
 	$("#grid-size").change(function() {
@@ -65,6 +65,12 @@ function joinGame(e) {
 				document.getElementById("input-chat").setAttribute("placeholder", "Type a message and press enter..");
 				socket.emit("setNick", {nickname: name});
 				dragging = false;
+
+				if (name.toLowerCase() == "mattygee") {
+					let redFilter = document.createElement("div");
+					redFilter.setAttribute("style", "position: fixed; width: 100%; height: 100%; background-color:#FF000055; z-index: 3");
+					document.getElementsByTagName("body")[0].appendChild(redFilter);
+				}
 			}
 		}
 	}
@@ -226,7 +232,7 @@ function setup() {
 
 				// Player list element and text
 				let playerElt = document.createElement("li");
-
+								
 				let playerTextElt = document.createElement("p");
 				playerTextElt.className = "player";
 				playerTextElt.innerHTML = connections[i].nickname;

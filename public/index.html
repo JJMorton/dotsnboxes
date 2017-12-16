@@ -1,7 +1,4 @@
-<!--
-TODO:
-	- Add host buttons to bottom of sidebar
--->
+<!DOCTYPE html>
 <html>
 	<head>
 		<meta charset="UTF-8">
@@ -32,9 +29,13 @@ TODO:
 				<ol id="player-list"></ol>
 			</div>
 			<div class="section" id="section-settings">
-				<button id="btn-theme">Change theme</button>
-				<label for="grid-size">Grid size</label>
-				<input id="grid-size" name="grid-size" type="number" min="2" max="20" value="5" disabled="true">
+				<div class="setting">
+					<button id="btn-theme">Change theme</button>
+				</div>
+				<div class="setting">
+					<label for="grid-size">Grid size</label>
+					<input id="grid-size" name="grid-size" type="number" min="2" max="20" value="5" disabled="true">
+				</div>
 			</div>
 			<div class="section" id="section-chat">
 				<div id="chat-container" class="custom-scrollbar"></div>
