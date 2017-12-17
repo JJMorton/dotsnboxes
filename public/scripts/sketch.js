@@ -29,11 +29,11 @@ $(document).ready(function() {
 	});
 
 	$("#btn-theme").click(function() {
-		let oldLink = document.getElementsByTagName("link")[0];
-		if (oldLink.href.substring(oldLink.href.length - 8) == "dark.css") {
-			oldLink.href = "styles/light.css";
+		let link = document.getElementById("theme-style");
+		if (link.href.substring(link.href.length - 8) == "dark.css") {
+			link.href = "styles/light.css";
 		} else {
-			oldLink.href = "styles/dark.css";
+			link.href = "styles/dark.css";
 		}
 
 		c_temp = c_fore;
@@ -56,6 +56,34 @@ $(document).ready(function() {
 	$("#grid-size").mouseup(function() {
 		$(this).change();
 	});
+
+	$("#toggle-sidebar").click(function() {
+		let sidebar = $("#sidebar");
+		let game = $("#game");
+		let currentTurn = $("#current-turn");
+
+		if (sidebar.css("left") == "0px") {
+			// Hide sidebar
+			game.animate({opacity: "0"}, {duration: 200, complete: function() {
+				game.css({"width": "100%", "left": "0px"});
+				moveGrid();
+				game.animate({opacity: "1"}, 200);
+			}});
+			sidebar.animate({left: "-" + sidebar.css("width")}, 200);
+			currentTurn.slideDown(200);
+			$(this).children().first().text(">");
+		} else {
+			// Show sidebar
+			game.animate({opacity: "0"}, {duration: 200, complete: function() {
+				game.css({"width": "75%", "left": "25%"});
+				moveGrid();
+				game.animate({opacity: "1"}, 200);
+			}});
+			sidebar.animate({left: "0px"}, 200);
+			currentTurn.slideUp(200);
+			$(this).children().first().text("<");
+		}
+	});
 });
 
 function joinGame(e) {
@@ -72,7 +100,7 @@ function joinGame(e) {
 
 				if (name.toLowerCase() == "mattygee") {
 					let redFilter = document.createElement("div");
-					redFilter.setAttribute("style", "position: fixed; width: 100%; height: 100%; background-color:#FF000055; z-index: 3");
+					redFilter.setAttribute("style", "position: fixed; width: 100%; height: 100%; background-color:#FF000055; z-index: 3; pointer-events: none");
 					document.getElementsByTagName("body")[0].appendChild(redFilter);
 				}
 			}
@@ -117,7 +145,6 @@ function transMouse() {
 }
 
 function createGrid() {
-	//gridSize = 5 + Math.floor(connections.length/2);
 	dotSize = boxSize/10;
 	hoverRadius = boxSize/3;
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
@@ -131,29 +158,40 @@ function createGrid() {
 	}
 }
 
-function resizeGrid() {
-	dotSize = boxSize/10;
-	hoverRadius = boxSize/3;
+function moveGrid() {
+	resizeCanvas(document.getElementById("game").offsetWidth, document.getElementById("game").offsetHeight);
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
-
-	for (let x = 0; x < gridSize; x++) {
-		for (let y = 0; y < gridSize; y++) {
-			grid[x][y].x = x * boxSize + boxSize/2;
-			grid[x][y].y = y * boxSize + boxSize/2;
-			grid[x][y].size = dotSize;
-			grid[x][y].hoverSize = hoverRadius * 2;
-			grid[x][y].jointSize = boxSize;
-		}
-	}
 }
 
 function zoom(absAmount) {
+
+	// Scales the zoom amount by how zoomed in the grid already is
+	// Means that the grid zooms faster when it is larger
 	let amount = absAmount * boxSize;
+
+	// Contrain zoom to keep the game within the window
 	if ((amount > 0 || boxSize + amount > 0.02*min(width, height)) && (amount < 0 || (boxSize + amount) * gridSize < 0.9*min(width, height))) {
+
+		// Calculate size of elements to draw
 		boxSize += amount;
 		hoverRadius = boxSize/3;
+		dotSize = boxSize/10;
+
+		// Recalculate position of dots
+		for (let x = 0; x < gridSize; x++) {
+			for (let y = 0; y < gridSize; y++) {
+				grid[x][y].x = x * boxSize + boxSize/2;
+				grid[x][y].y = y * boxSize + boxSize/2;
+				grid[x][y].size = dotSize;
+				grid[x][y].hoverSize = hoverRadius * 2;
+				grid[x][y].jointSize = boxSize;
+			}
+		}
+
+		// Move the grid to the centre
+		moveGrid();
 	}
-	resizeGrid();
+
 }
 
 function preload() {
@@ -195,6 +233,14 @@ function setup() {
 	socket.on("gameUpdate", (data) => {
 		// Update play state
 		play = data.play
+
+		if (!play) {
+			if (name != "") {
+				$("#current-turn").children().first().html("Playing as <strong>" + name + "</strong>");
+			} else {
+				$("#current-turn").children().first().html("You are a <strong>spectator</strong>");
+			}
+		}
 
 		// Update player count
 		connections = data.players;
@@ -257,12 +303,18 @@ function setup() {
 				playerElt.appendChild(scoreElt);
 				playerElt.appendChild(playerTextElt);
 
-				// Current turn indicator
+				// Current turn indicators
 				if (connections[i].active && play) {
 					let playerIndicatorElt = document.createElement("p");
 					playerIndicatorElt.id = "active-player-indicator";
 					playerIndicatorElt.innerHTML = "<";
 					playerElt.appendChild(playerIndicatorElt);
+
+					if (connections[i].id == socket.id) {
+						$("#current-turn").children().first().html("<strong>Your</strong> turn");
+					} else {
+						$("#current-turn").children().first().html("<strong>" + connections[i].nickname + "</strong>'s turn");
+					}
 				}
 
 				playerListElt.appendChild(playerElt);
@@ -401,6 +453,5 @@ function mouseWheel(e) {
 }
 
 function windowResized() {
-	resizeCanvas(document.getElementById("game").offsetWidth, document.getElementById("game").offsetHeight);
-	resizeGrid();
+	moveGrid();
 }

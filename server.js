@@ -266,7 +266,7 @@ io.sockets.on('connection', (socket) => {
 					}
 				}
 				io.sockets.emit('message', {
-					message: winnersString + "drew with a score of " + winners[0].score,
+					text: winnersString + "drew with a score of " + winners[0].score,
 					sender: ""
 				});
 			}
