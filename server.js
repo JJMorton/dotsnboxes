@@ -319,35 +319,37 @@ io.sockets.on('connection', (socket) => {
 			i++;
 		}
 		
-		// Decides if all the players are inactive or not
-		let inactive = true;
-		for (player of players) {
-			if (player.present) {
-				inactive = false;
-			}
-		}
-
-		// If an active player disconnected, give the turn to the next player
-		if (!inactive && activePlayerDisconnect >= 0) {
-			nextPlayer();
-		}
-
-		// If the admin disconnected, give admin to the first present player
-		if (adminDisconnect && players.length > 0 && !inactive) {
-			let i = 0;
-			let foundNewAdmin = false;
-			while (i < players.length && !foundNewAdmin) {
-				if (players[i].present) {
-					players[i].admin = true;
-					foundNewAdmin = true;
+		if (found) {
+			// Decides if all the players are inactive or not
+			let inactive = true;
+			for (player of players) {
+				if (player.present) {
+					inactive = false;
 				}
-				i++
 			}
-		}
 
-		if (players.length == 0 || inactive) {
-			console.log("[" + getFormattedTime() + "] Players disconnected, restarting game");
-			reset();
+			// If an active player disconnected, give the turn to the next player
+			if (!inactive && activePlayerDisconnect >= 0) {
+				nextPlayer();
+			}
+
+			// If the admin disconnected, give admin to the first present player
+			if (adminDisconnect && players.length > 0 && !inactive) {
+				let i = 0;
+				let foundNewAdmin = false;
+				while (i < players.length && !foundNewAdmin) {
+					if (players[i].present) {
+						players[i].admin = true;
+						foundNewAdmin = true;
+					}
+					i++
+				}
+			}
+
+			if (players.length == 0 || inactive) {
+				console.log("[" + getFormattedTime() + "] Players disconnected, restarting game");
+				reset();
+			}
 		}
 
 		emitGameUpdate();
