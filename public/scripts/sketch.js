@@ -5,7 +5,7 @@ window.mobileCheck = function() {
 };
 
 let socket;
-//let host = 'https://dotsnboxes.herokuapp.com';
+let host = 'https://dotsnboxes.herokuapp.com';
 
 let mobile;
 
