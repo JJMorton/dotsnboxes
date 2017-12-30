@@ -4,16 +4,15 @@
 		<meta charset="UTF-8">
 		<title>Dots and Boxes</title>
 
-		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-		<link rel="manifest" href="/manifest.json">
+		<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+		<link rel="manifest" href="../manifest.json">
 		<meta name="theme-color" content="#ffffff">
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
 		<script language="javascript" type="text/javascript" src="libraries/p5.js"></script>
-		<script language="javascript" type="text/javascript" src="libraries/p5.dom.js"></script>
 		<script language="javascript" type="text/javascript" src="libraries/p5.sound.js"></script>
 		<script language="javascript" type="text/javascript" src="scripts/snow.js"></script>
 		<script language="javascript" type="text/javascript" src="scripts/dot.js"></script>
@@ -31,7 +30,7 @@
 			<div class="section" id="section-btns">
 				<button id="btn-join" onclick="$('#input-nickname').slideDown(100).focus()">Join Game</button>
 				<button id="btn-ready" onclick="toggleReady()">Toggle Ready</button>
-				<input id="input-nickname" placeholder="Enter nickname and press enter" onkeypress="joinGame(event)">
+				<input id="input-nickname" placeholder="Enter nickname and press enter" type="text" onkeypress="joinGame(event)">
 			</div>
 			<div class="section" id="section-players">
 				<p id="player-count"></p>
@@ -43,7 +42,7 @@
 				</div>
 				<div class="setting">
 					<label for="grid-size">Grid size</label>
-					<input id="grid-size" name="grid-size" type="number" min="2" max="20" value="5" disabled="true">
+					<input id="grid-size" name="grid-size" type="range" min="3" max="20" step="1" value="5" disabled="true">
 				</div>
 			</div>
 			<div class="section" id="section-chat">

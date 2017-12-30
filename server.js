@@ -49,7 +49,6 @@ function reset() {
 }
 
 function createGrid() {
-	//let size = 5 + Math.floor(players.length/2);
 	grid = [];
 	for (let x = 0; x < gridSize; x++) {
 		grid[x] = [];
@@ -319,6 +318,7 @@ io.sockets.on('connection', (socket) => {
 			i++;
 		}
 		
+		// If the client was a player
 		if (found) {
 			// Decides if all the players are inactive or not
 			let inactive = true;

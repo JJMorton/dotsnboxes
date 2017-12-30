@@ -21,49 +21,49 @@ class Dot {
 		this.joints[index] = true;
 	}
 
-	draw() {
+	draw(g) {
 		if (this.box) {
-			noStroke();
-			fill(c_fore, 20);
-			rect(this.x, this.y, this.jointSize, this.jointSize);
-			textAlign(CENTER, CENTER);
+			g.noStroke();
+			g.fill(c_fore, 20);
+			g.rect(this.x, this.y, this.jointSize, this.jointSize);
+			g.textAlign(CENTER, CENTER);
 			if (mobile) {
-				textSize(this.jointSize/2);
+				g.textSize(this.jointSize/2);
 			} else {
-				textSize(this.jointSize/3);
+				g.textSize(this.jointSize/3);
 			}
-			fill(c_fore);
-			text(this.boxText, this.x + this.jointSize/2 - this.size/4, this.y + this.jointSize/2 - this.size/4);
+			g.fill(c_fore);
+			g.text(this.boxText, this.x + this.jointSize/2 - this.size/4, this.y + this.jointSize/2 - this.size/4);
 		}
 
-		noStroke();
-		fill(c_fore);
-		ellipse(this.x, this.y, this.size);
+		g.noStroke();
+		g.fill(c_fore);
+		g.ellipse(this.x, this.y, this.size);
 
-		stroke(c_fore);
-		strokeWeight(this.size * 0.7);
+		g.stroke(c_fore);
+		g.strokeWeight(this.size * 0.7);
 		for (let i = 0; i < this.joints.length; i++) {
 			if (this.joints[i]) {
 				switch(i) {
 					case 0:
-						line(this.x, this.y, this.x, this.y - this.jointSize);
+						g.line(this.x, this.y, this.x, this.y - this.jointSize);
 						break;
 					case 1:
-						line(this.x, this.y, this.x + this.jointSize, this.y);
+						g.line(this.x, this.y, this.x + this.jointSize, this.y);
 						break;
 					case 2:
-						line(this.x, this.y, this.x, this.y + this.jointSize);
+						g.line(this.x, this.y, this.x, this.y + this.jointSize);
 						break;
 					case 3:
-						line(this.x, this.y, this.x - this.jointSize, this.y);
+						g.line(this.x, this.y, this.x - this.jointSize, this.y);
 				}
 			}
 		}
 
 		if (this.active) {
-			noStroke();
-			fill(c_fore, 70);
-			ellipse(this.x, this.y, this.hoverSize);
+			g.noStroke();
+			g.fill(c_fore, 70);
+			g.ellipse(this.x, this.y, this.hoverSize);
 		}
 	}
 

@@ -5,17 +5,16 @@ window.mobileCheck = function() {
 };
 
 let socket;
-//let host = 'http://165.120.23.108:8001/';
-let host = 'https://dotsnboxes.herokuapp.com/';
+//let host = 'https://dotsnboxes.herokuapp.com';
 
 let mobile;
 
 let gridSize, boxSize, dotSize, hoverRadius;
 let dragOrigin, transPos, dragging;
 let activeDot, completedBoxes;
-let grid;
+let grid, gridImg;
 let name, play, active, admin;
-let sndPress, sndRelease, sndBox;
+let sndPress, sndRelease, sndTurn;
 let connections;
 let snow;
 
@@ -39,10 +38,12 @@ $(document).ready(function() {
 		c_temp = c_fore;
 		c_fore = c_back;
 		c_back = c_temp;
+
+		drawGrid();
 	});
 
 	$("[type='number']").keypress(function (e) {
-    	e.preventDefault();
+		e.preventDefault();
 	});
 
 	$("#grid-size").change(function() {
@@ -53,10 +54,6 @@ $(document).ready(function() {
 		}
 	});
 
-	$("#grid-size").mouseup(function() {
-		$(this).change();
-	});
-
 	$("#toggle-sidebar").click(function() {
 		let sidebar = $("#sidebar");
 		let game = $("#game");
@@ -65,11 +62,11 @@ $(document).ready(function() {
 		if (sidebar.css("left") == "0px") {
 			// Hide sidebar
 			game.animate({opacity: "0"}, {duration: 200, complete: function() {
-				game.css({"width": "100%", "left": "0px"});
+				game.css({"width": "100%", "left": "0%"});
 				moveGrid();
 				game.animate({opacity: "1"}, 200);
 			}});
-			sidebar.animate({left: "-" + sidebar.css("width")}, 200);
+			sidebar.animate({left: "-25%"}, 200);
 			currentTurn.slideDown(200);
 			$(this).children().first().text(">");
 		} else {
@@ -79,7 +76,7 @@ $(document).ready(function() {
 				moveGrid();
 				game.animate({opacity: "1"}, 200);
 			}});
-			sidebar.animate({left: "0px"}, 200);
+			sidebar.animate({left: "0%"}, 200);
 			currentTurn.slideUp(200);
 			$(this).children().first().text("<");
 		}
@@ -145,6 +142,14 @@ function transMouse() {
 }
 
 function createGrid() {
+	if (boxSize * gridSize > 0.9*min(width, height)) {
+		// Too big
+		boxSize = 0.9*min(width, height) / gridSize;
+	} else if (boxSize * gridSize < 0.1*min(width, height)) {
+		// Too small
+		boxSize = 0.1*min(width, height) / gridSize;
+	}
+
 	dotSize = boxSize/10;
 	hoverRadius = boxSize/3;
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
@@ -163,14 +168,38 @@ function moveGrid() {
 	transPos = createVector(width/2 - boxSize*gridSize/2, height/2 - boxSize*gridSize/2);
 }
 
+function drawGrid() {
+	// Remove the DOM element of gridImage and recreate it to the right size
+	gridImg.elt.remove();
+	gridImg = createGraphics(gridSize * boxSize, gridSize * boxSize);
+	// Draw the grid to the gridImg graphic
+	let mousePos = transMouse();
+	forEachDot((dot) => {
+		dot.draw(gridImg);
+		if (dot == activeDot) {
+			gridImg.stroke(c_fore);
+			gridImg.strokeWeight(dotSize * 0.7);
+			gridImg.line(dot.x, dot.y, mousePos.x, mousePos.y);
+		} else {
+			if (dist(mousePos.x, mousePos.y, dot.x, dot.y) < hoverRadius && active) {
+				dot.hover();
+			}
+		}
+	});
+}
+
 function zoom(absAmount) {
 
 	// Scales the zoom amount by how zoomed in the grid already is
 	// Means that the grid zooms faster when it is larger
 	let amount = absAmount * boxSize;
 
-	// Contrain zoom to keep the game within the window
-	if ((amount > 0 || boxSize + amount > 0.02*min(width, height)) && (amount < 0 || (boxSize + amount) * gridSize < 0.9*min(width, height))) {
+	let newSize = (boxSize + amount) * gridSize;
+
+	// Contrain zoom to keep the game a sensible size
+	// amount > 0 == zoom out
+	// amount < 0 == zoom in
+	if ((amount > 0 || newSize > 0.1*min(width, height)) && (amount < 0 || newSize < 0.9*min(width, height))) {
 
 		// Calculate size of elements to draw
 		boxSize += amount;
@@ -188,8 +217,9 @@ function zoom(absAmount) {
 			}
 		}
 
-		// Move the grid to the centre
+		// Move the grid to the centre and redraw
 		moveGrid();
+		drawGrid();
 	}
 
 }
@@ -198,7 +228,7 @@ function preload() {
 	// Load sounds
 	sndPress = loadSound('assets/press.wav');
 	sndRelease = loadSound('assets/release.wav');
-	sndBox = loadSound('assets/box.wav');
+	sndTurn = loadSound('assets/turn.wav');
 }
 
 function setup() {
@@ -214,6 +244,7 @@ function setup() {
 	completedBoxes = 0;
 	dragging = false;
 	grid = [];
+	gridImg = createGraphics(width, height);
 	name = "";
 	admin = false;
 	play = false;
@@ -228,7 +259,11 @@ function setup() {
 	}
 
 	// Socket events
-	socket = io.connect(host);
+	if (typeof host === "undefined") {
+		socket = io.connect("localhost:8001");
+	} else {
+		socket = io.connect(host);
+	}
 
 	socket.on("gameUpdate", (data) => {
 		// Update play state
@@ -259,6 +294,8 @@ function setup() {
 			i++;
 		});
 
+		drawGrid();
+
 		// Update player list
 		// Remove all players in list
 		let playerListElt = document.getElementById("player-list");
@@ -274,6 +311,10 @@ function setup() {
 			for (let i = 0; i < connections.length; i++) {
 				// Evaluates whether the player is active or an admin
 				if (connections[i].id == socket.id && connections[i].active) {
+					if (!active) {
+						sndTurn.setVolume(0.2);
+						sndTurn.play();
+					}
 					active = true;
 				}
 				if (connections[i].id == socket.id && connections[i].admin) {
@@ -361,11 +402,13 @@ function draw() {
 	// Drawing the actual game
 	translate(transPos.x, transPos.y);
 
+	image(gridImg, 0, 0);
+
 	let mousePos = transMouse();
 
 	// Draw the dots
 	forEachDot((dot) => {
-		dot.draw();
+		// dot.draw();
 		if (dot == activeDot) {
 			stroke(c_fore);
 			strokeWeight(dotSize * 0.7);
@@ -454,4 +497,5 @@ function mouseWheel(e) {
 
 function windowResized() {
 	moveGrid();
+	drawGrid();
 }
